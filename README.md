@@ -1,9 +1,9 @@
 # Mandelbrot-Set-Fractal
-The mandelbrot set rendered using mass parallelism in the graphics card. The code that you probably care about is in src/game/GameLogicInterface.cpp, there are seperate functions for generating the set via the CPU and GPU.
+The mandelbrot set rendered using mass parallelism in the graphics card. The code that you probably care about is in src/game/GameLogicInterface.cpp, there are seperate functions for generating the set via the CPU and GPU.  
 
-Controls
-1 - render performed with GPU
-2 - render performed with CPU
+Controls  
+1 - render performed with GPU  
+2 - render performed with CPU  
 
 W - move view up  
 A - move view left  
