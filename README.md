@@ -20,6 +20,7 @@ Control + S - save a png image of the content pane of the window called "mandelb
 Libraries used
 - GLFW - to create a window, OpenGLcontext, and to handke input
 - GLEW - to wrangle OpenGL functions and extensions
+- Stb_Image - to produce a png file from raw pixel data
 
 For more information about the Mandelbrot Set you can read about it here: https://en.wikipedia.org/wiki/Mandelbrot_set
 
