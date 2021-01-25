@@ -1,6 +1,8 @@
 # Mandelbrot-Set-Fractal
 The mandelbrot set rendered using mass parallelism in the graphics card
 
+
+Controls
 W - move view up
 A - move view left
 S - move view down
@@ -11,6 +13,9 @@ E - zoom in to mouse
 
 O - zoom out from middle screen
 P - zoom in to middle screen
+
+Control + S - save a png image of the content pane of the window called "mandelbrot-image.png" in the root folder
+
 
 Libraries used
 - GLFW - to create a window, OpenGLcontext, and to handke input
