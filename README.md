@@ -23,7 +23,7 @@ Libraries used
 - Stb_Image - to produce a png file from raw pixel data  
 
 
-How to build
+How to build  
 The project is built with Microsoft's Visual Studio 2019. Simply clone the repo, open the Raycasting.sln file, then build the solution.
 
 
