@@ -23,6 +23,8 @@
 // this stops the variables declared here from becoming globaly accessable
 namespace {
 
+    bool renderWithGPU = true;
+
     Texture tex(1920, 1080);
 
     float camZoom = 1.0f;
@@ -195,7 +197,10 @@ namespace {
 void GameLogicInterface::init() {
 	window.setResolution(1920, 1080);
 
-    generateMandelbrot_gpu(tex);
+    if (renderWithGPU)
+        generateMandelbrot_gpu(tex);
+    else
+        generateMandelbrot_cpu(tex);
 
 }
 
@@ -261,7 +266,10 @@ void GameLogicInterface::update(float deltaTime) {
     }
 
     if (wasMoved) {
-        generateMandelbrot_gpu(tex);
+        if (renderWithGPU)
+            generateMandelbrot_gpu(tex);
+        else
+            generateMandelbrot_cpu(tex);
     }
 
 }
@@ -285,6 +293,14 @@ void GameLogicInterface::keyCallback(int key, int scancode, int action, int mods
     
     if (key == GLFW_KEY_S && (mods & GLFW_MOD_CONTROL)) {
         tex.saveToFile("mandelbrot-image.png");
+    }
+
+    if (key == GLFW_KEY_1) {
+        renderWithGPU = true;
+    }
+
+    if (key == GLFW_KEY_2) {
+        renderWithGPU = false;
     }
 
 }

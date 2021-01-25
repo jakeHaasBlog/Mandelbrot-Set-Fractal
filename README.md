@@ -3,6 +3,9 @@ The mandelbrot set rendered using mass parallelism in the graphics card
 
 
 Controls
+1 - render performed with GPU
+2 - render performed with CPU
+
 W - move view up
 A - move view left
 S - move view down
