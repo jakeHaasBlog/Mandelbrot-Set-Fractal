@@ -29,23 +29,24 @@ namespace {
 
     Texture tex(1920, 1080);
 
-    float camZoom = 1.0f;
-    float camX = 0.0f;
-    float camY = 0.0f;
+    double camZoom = 1.0f;
+    double camX = 0.0f;
+    double camY = 0.0f;
 
-    int maxItter = 500;
-    float colorShiftFactor = 30.0f;
+    int maxItter = 300;
+    float colorShiftFactor = 2.0f;
 
     bool rerender = true;
+    bool tryingToSaveFlag = false;
 
     std::array<float, 3> colorRotator(float colorShift) {
 
         colorShift *= colorShiftFactor;
-
+        
         float r = 1.0f - (cos(colorShift * 3.14159f * 1.0f) + 1.0f) / 2.0f;
         float g = 1.0f - (cos(colorShift * 3.14159f * 3.0f) + 1.0f) / 2.0f;
         float b = 1.0f - (cos(colorShift * 3.14159f * 5.0f) + 1.0f) / 2.0f;
-
+        
         return { r, g, b };
 
     }
@@ -73,8 +74,8 @@ namespace {
         for (int x = 0; x < pixWide; x++) {
             for (int y = 0; y < pixelData.size() / pixWide; y++) {
 
-                double x0 = x / 1920.0;
-                double y0 = y / 1080.0;
+                double x0 = (float)x / tex.getWidth();
+                double y0 = (float)y / tex.getHeight();
 
                 x0 *= 3.5;
                 x0 -= 2.5;
@@ -129,8 +130,9 @@ namespace {
             "\n"
             "in vec2 v_texCoord;\n"
             "\n"
-            "uniform float u_zoom;\n"
-            "uniform vec2 u_manTrans;\n"
+            "uniform uvec2 u_zoom2i;\n"
+            "uniform uvec2 u_manTransX2i;\n"
+            "uniform uvec2 u_manTransY2i;\n"
             "uniform int u_maxItter;\n"
             "uniform float u_colorShiftFactor;\n"
             "\n"
@@ -139,14 +141,18 @@ namespace {
             "void main()\n"
             "{\n"
             ""
+            "   double u_zoom = packDouble2x32(u_zoom2i);\n"
+            "   double u_manTransX = packDouble2x32(u_manTransX2i);\n"
+            "   double u_manTransY = packDouble2x32(u_manTransY2i);\n"
+            ""
             "   double x0 = v_texCoord[0] * 3.5f - 2.5f;\n"
             "   double y0 = v_texCoord[1] * 2.0f - 1.0f;\n"
             ""
             "   x0 *= u_zoom;\n"
             "   y0 *= u_zoom;\n"
             ""
-            "   x0 += u_manTrans[0];\n"
-            "   y0 += u_manTrans[1];\n"
+            "   x0 += u_manTransX;\n"
+            "   y0 += u_manTransY;\n"
             ""
             "   double x = 0.0f;\n"
             "   double y = 0.0f;\n"
@@ -160,12 +166,12 @@ namespace {
             "       itter = itter + 1;\n"
             "   }\n"
             ""
-            "   float colorShift = float(itter) / float(u_maxItter);"
+            "   float colorShift = float(itter) / float(u_maxItter);\n"
             ""
-            "   colorShift *= u_colorShiftFactor;;"
-            "   float r = 1.0f - (cos(colorShift * 3.14159f * 1.0f) + 1.0f) / 2.0f;"
-            "   float g = 1.0f - (cos(colorShift * 3.14159f * 3.0f) + 1.0f) / 2.0f;"
-            "   float b = 1.0f - (cos(colorShift * 3.14159f * 5.0f) + 1.0f) / 2.0f;"
+            "   colorShift *= u_colorShiftFactor;\n"
+            "   float r = 1.0f - (cos(colorShift * 3.14159f * 1.0f) + 1.0f) / 2.0f;\n"
+            "   float g = 1.0f - (cos(colorShift * 3.14159f * 3.0f) + 1.0f) / 2.0f;\n"
+            "   float b = 1.0f - (cos(colorShift * 3.14159f * 5.0f) + 1.0f) / 2.0f;\n"
             ""
             ""
             "	color = vec4(r, g, b, 1.0f);\n"
@@ -173,10 +179,22 @@ namespace {
 
         static Shader sh = Shader(vertexShaderString, fragmentShaderString);
 
-        sh.setUniform1f("u_zoom", camZoom);
-        sh.setUniform2f("u_manTrans", camX, camY);
         sh.setUniform1i("u_maxItter", maxItter);
         sh.setUniform1f("u_colorShiftFactor", colorShiftFactor);
+
+        // doubles cant be sent as uniforms so they are unpacked into 2 unsigned ints and reassembled in the shader, zoom and translation must have double precision
+        unsigned int zoom[2];
+        *((double*)(&zoom[0])) = camZoom;
+        sh.setUniform2ui("u_zoom2i", zoom[0], zoom[1]);
+
+        unsigned int manTransX[2];
+        *((double*)(&manTransX[0])) = camX;
+        sh.setUniform2ui("u_manTransX2i", manTransX[0], manTransX[1]);
+
+        unsigned int manTransY[2];
+        *((double*)(&manTransY[0])) = camY;
+        sh.setUniform2ui("u_manTransY2i", manTransY[0], manTransY[1]);
+
 
         static TexturedQuad gpuQuad;
         gpuQuad.setBounding(-2.0f, -1.0f, 4.0f, 2.0f);
@@ -272,6 +290,7 @@ void GameLogicInterface::update(float deltaTime) {
             generateMandelbrot_cpu(tex);
     }
 
+
     std::string itterTxt = "Process Itterations: ";
     itterTxt.append(std::to_string(maxItter));
 
@@ -281,6 +300,40 @@ void GameLogicInterface::update(float deltaTime) {
     maxItterCounter.setCharHeight(0.08f);
     maxItterCounter.setColor(1, 1, 1);
     maxItterCounter.render();
+
+
+    char colorShiftText[100];
+    sprintf_s(colorShiftText, 100, "Color Shift Factor: %.0f", colorShiftFactor);
+
+    static BitmapText colorShiftCounter;
+    colorShiftCounter.setText(colorShiftText);
+    colorShiftCounter.setPosition(ViewportManager::getLeftViewportBound(), ViewportManager::getTopViewportBound() - 0.08f * 2);
+    colorShiftCounter.setCharHeight(0.08f);
+    colorShiftCounter.setColor(1, 1, 1);
+    colorShiftCounter.render();
+
+
+    char posText[100];
+    sprintf_s(posText, 100, "Pos(%.5f, %.5f)", camX, camY);
+
+    static BitmapText posDisplay;
+    posDisplay.setText(posText);
+    posDisplay.setPosition(ViewportManager::getLeftViewportBound(), ViewportManager::getTopViewportBound() - 0.08f * 3);
+    posDisplay.setCharHeight(0.06f);
+    posDisplay.setColor(1, 1, 1);
+    posDisplay.render();
+
+
+    char zoomText[100];
+    sprintf_s(zoomText, 100, "Zoom: %f", 1.0 / camZoom);
+
+    static BitmapText zoomDisplay;
+    zoomDisplay.setText(zoomText);
+    zoomDisplay.setPosition(ViewportManager::getLeftViewportBound(), ViewportManager::getTopViewportBound() - 0.08f * 4);
+    zoomDisplay.setCharHeight(0.06f);
+    zoomDisplay.setColor(1, 1, 1);
+    zoomDisplay.render();
+   
 }
 
 void GameLogicInterface::cleanup() {
@@ -313,12 +366,18 @@ void GameLogicInterface::keyCallback(int key, int scancode, int action, int mods
         rerender = true;
     }
 
-    if (key == GLFW_KEY_1) {
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
         renderWithGPU = true;
     }
-
-    if (key == GLFW_KEY_2) {
+    else if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
         renderWithGPU = false;
+    }
+
+    if (key == GLFW_KEY_K && action == GLFW_PRESS) {
+        colorShiftFactor -= 1;
+    }
+    else if (key == GLFW_KEY_L && action == GLFW_PRESS) {
+        colorShiftFactor += 1;
     }
 
 }

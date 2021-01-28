@@ -19,6 +19,9 @@ E - zoom in to mouse
 O - zoom out from middle screen  
 P - zoom in to middle screen  
 
+K - decrease color shift factor  
+L - increase color shift factor  
+
 Control + S - save a png image of the content pane of the window called "mandelbrot-image.png" in the root folder  
 
 

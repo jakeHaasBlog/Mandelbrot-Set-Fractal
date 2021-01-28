@@ -14,9 +14,6 @@
     <Filter Include="Source Files\engine\primitives">
       <UniqueIdentifier>{d9e3dfd4-489f-48b9-bf55-8adfc4e7fed6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\engine\raycasting utils">
-      <UniqueIdentifier>{eef9e595-6390-4d36-9135-812ad25488d5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\engine\opengl utils">
       <UniqueIdentifier>{d566ba02-e57b-411c-aa1c-dc77be1daf54}</UniqueIdentifier>
     </Filter>

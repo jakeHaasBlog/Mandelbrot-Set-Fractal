@@ -83,6 +83,13 @@ void Shader::setUniformIntArray(const std::string & uniformName, int * values, i
 	unbind();
 }
 
+void Shader::setUniform2ui(const std::string& uniformName, int a, int b)
+{
+	bind();
+	glUniform2ui(getUniformLocation(uniformName), a, b);
+	unbind();
+}
+
 void Shader::bind() {
 	if (!isInitialized) initialize();
 	glUseProgram(id);

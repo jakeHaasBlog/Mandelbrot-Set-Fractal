@@ -40,6 +40,9 @@ public:
 	void setUniform1i(const std::string& uniformName, int value);
 	void setUniformIntArray(const std::string& uniformName, int* values, int count);
 
+	void setUniform2ui(const std::string& uniformName, int a, int b);
+
+
 	// important: you must set any required uniforms BEFORE you bind the shader for rendering
 	void bind();
 	void unbind();
