@@ -27,7 +27,7 @@ namespace {
 
     bool renderWithGPU = true;
 
-    Texture tex(1920, 1080);
+    Texture tex(1080, 720);
 
     double camZoom = 1.0f;
     double camX = 0.0f;
@@ -37,7 +37,7 @@ namespace {
     float colorShiftFactor = 2.0f;
 
     bool rerender = true;
-    bool tryingToSaveFlag = false;
+    bool saveFlag = false;
 
     std::array<float, 3> colorRotator(float colorShift) {
 
@@ -68,36 +68,6 @@ namespace {
         return itter;
 
     }
-
-    void fillWithMandelbrotData(std::vector<std::array<float, 4>>& pixelData, int pixWide, float camX, float camY, float zoom) {
-
-        for (int x = 0; x < pixWide; x++) {
-            for (int y = 0; y < pixelData.size() / pixWide; y++) {
-
-                double x0 = (float)x / tex.getWidth();
-                double y0 = (float)y / tex.getHeight();
-
-                x0 *= 3.5;
-                x0 -= 2.5;
-                y0 *= 2.0;
-                y0 -= 1.0;
-
-                x0 *= zoom;
-                y0 *= zoom;
-
-                x0 += camX;
-                y0 += camY;
-
-                float man = (float)mandelbrotAt(x0, y0, maxItter) / (float)maxItter;
-                std::array<float, 3> color = colorRotator(man);
-
-                pixelData[x + y * pixWide] = { color[0], color[1], color[2], 1.0f };
-
-            }
-        }
-
-    }
-
 
     void generateMandelbrot_gpu(Texture& texture) {
 
@@ -200,17 +170,43 @@ namespace {
         gpuQuad.setBounding(-2.0f, -1.0f, 4.0f, 2.0f);
         gpuQuad.setShader(sh);
 
-        tex.bindAsRenderTarget();
+        texture.bindAsRenderTarget();
         gpuQuad.render();
-        tex.unbindAsRenderTarget();
+        texture.unbindAsRenderTarget();
 
     }
 
     void generateMandelbrot_cpu(Texture & texture) {
-        std::vector<std::array<float, 4>> pixelData(1920 * 1080);
-        fillWithMandelbrotData(pixelData, 1920, camX, camY, camZoom);
+        std::vector<std::array<float, 4>> pixelData(texture.getWidth() * texture.getHeight());
+        //fillWithMandelbrotData(pixelData, 1920, camX, camY, camZoom);
 
-        tex.generateFromData(1920, 1080, &pixelData[0][0], pixelData.size());
+        for (int x = 0; x < texture.getWidth(); x++) {
+            for (int y = 0; y < pixelData.size() / texture.getWidth(); y++) {
+
+                double x0 = (double)x / texture.getWidth();
+                double y0 = (double)y / texture.getHeight();
+
+                x0 *= 3.5;
+                x0 -= 2.5;
+                y0 *= 2.0;
+                y0 -= 1.0;
+
+                x0 *= camZoom;
+                y0 *= camZoom;
+
+                x0 += camX;
+                y0 += camY;
+
+                float man = (float)mandelbrotAt(x0, y0, maxItter) / (float)maxItter;
+                std::array<float, 3> color = colorRotator(man);
+
+                pixelData[x + y * texture.getWidth()] = { color[0], color[1], color[2], 1.0f };
+
+            }
+        }
+
+
+        texture.generateFromData(1920, 1080, &pixelData[0][0], pixelData.size());
     }
 	
 }
@@ -228,6 +224,13 @@ void GameLogicInterface::init() {
 // deltaTime is the milliseconds between frames. Use this for calculating movement to avoid slowing down if there is lag 
 void GameLogicInterface::update(float deltaTime) {
 
+    if (saveFlag) {
+        Texture newT = Texture(3840, 2160);
+        generateMandelbrot_gpu(newT);
+        newT.saveToFile("mandelbrot-image(4k).png");
+        saveFlag = false;
+    }
+
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -241,45 +244,45 @@ void GameLogicInterface::update(float deltaTime) {
     tq.render();
 
     if (window.keyIsDown(GLFW_KEY_E)) {
-        camZoom *= 0.97f;
+        camZoom += (1.03f * camZoom) * ((double)deltaTime / 16.0);
 
-        camX += window.getMouseX() * camZoom * 0.05f;
-        camY += window.getMouseY() * camZoom * 0.05f;
+        camX += window.getMouseX() * camZoom * 0.05f * ((double)deltaTime / 16.0);
+        camY += window.getMouseY() * camZoom * 0.05f * ((double)deltaTime / 16.0);
 
         rerender = true;
     }
 
     else if (window.keyIsDown(GLFW_KEY_Q)) {
-        camZoom *= 1.03f;
+        camZoom -= (1.03 * camZoom) * ((double)deltaTime / 16.0);
 
-        camX += window.getMouseX() * camZoom * 0.05f;
-        camY += window.getMouseY() * camZoom * 0.05f;
+        camX += window.getMouseX() * camZoom * 0.05 * ((double)deltaTime / 16.0);
+        camY += window.getMouseY() * camZoom * 0.05 * ((double)deltaTime / 16.0);
 
         rerender = true;
     }
 
     if (window.keyIsDown(GLFW_KEY_W)) {
-        camY += camZoom * 0.05f;
+        camY += camZoom * 0.05 * ((double)deltaTime / 16.0);
         rerender = true;
     }
-    else if (window.keyIsDown(GLFW_KEY_A)) {
-        camX -= camZoom * 0.05f;
+    if (window.keyIsDown(GLFW_KEY_A)) {
+        camX -= camZoom * 0.05 * ((double)deltaTime / 16.0);
         rerender = true;
     }
     if (window.keyIsDown(GLFW_KEY_S)) {
-        camY -= camZoom * 0.05f;
+        camY -= camZoom * 0.05 * ((double)deltaTime / 16.0);
         rerender = true;
     }
-    else if (window.keyIsDown(GLFW_KEY_D)) {
-        camX += camZoom * 0.05f;
+    if (window.keyIsDown(GLFW_KEY_D)) {
+        camX += camZoom * 0.05 * ((double)deltaTime / 16.0);
         rerender = true;
     }
 
     if (window.keyIsDown(GLFW_KEY_O)) {
-        camZoom *= 1.01f;
+        camZoom += (1.01 * camZoom - camZoom) * ((double)deltaTime / 16.0);
         rerender = true;
     } else if (window.keyIsDown(GLFW_KEY_P)) {
-        camZoom *= 0.99f;
+        camZoom -= (1.01 * camZoom - camZoom) * ((double)deltaTime / 16.0);
         rerender = true;
     }
 
@@ -288,6 +291,8 @@ void GameLogicInterface::update(float deltaTime) {
             generateMandelbrot_gpu(tex);
         else
             generateMandelbrot_cpu(tex);
+
+        rerender = false;
     }
 
 
@@ -354,7 +359,8 @@ void GameLogicInterface::keyCallback(int key, int scancode, int action, int mods
 {
     
     if (key == GLFW_KEY_S && (mods & GLFW_MOD_CONTROL)) {
-        tex.saveToFile("mandelbrot-image.png");
+        //tex.saveToFile("mandelbrot-image.png");
+        saveFlag = true;
     }
 
     if (key == GLFW_KEY_9 && action == GLFW_PRESS) {
