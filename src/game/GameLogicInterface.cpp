@@ -1,6 +1,8 @@
 ﻿
 #include "game/GameLogicInterface.h"
 
+#include <string>
+
 // -------------------------------- The Mandelbrot Algorithm Psudocode ---------------------------------------------
 /*
 * for each pixel (Px, Py) on the screen do
@@ -31,9 +33,10 @@ namespace {
     float camX = 0.0f;
     float camY = 0.0f;
 
-    int maxItter = 1000;
+    int maxItter = 500;
     float colorShiftFactor = 30.0f;
 
+    bool rerender = true;
 
     std::array<float, 3> colorRotator(float colorShift) {
 
@@ -162,7 +165,7 @@ namespace {
             "   colorShift *= u_colorShiftFactor;;"
             "   float r = 1.0f - (cos(colorShift * 3.14159f * 1.0f) + 1.0f) / 2.0f;"
             "   float g = 1.0f - (cos(colorShift * 3.14159f * 3.0f) + 1.0f) / 2.0f;"
-            "   float b = 1.0f - (cos(colorShift * 3.14159f * 6.0f) + 1.0f) / 2.0f;"
+            "   float b = 1.0f - (cos(colorShift * 3.14159f * 5.0f) + 1.0f) / 2.0f;"
             ""
             ""
             "	color = vec4(r, g, b, 1.0f);\n"
@@ -219,16 +222,13 @@ void GameLogicInterface::update(float deltaTime) {
     
     tq.render();
 
-
-    bool wasMoved = false;
-
     if (window.keyIsDown(GLFW_KEY_E)) {
         camZoom *= 0.97f;
 
         camX += window.getMouseX() * camZoom * 0.05f;
         camY += window.getMouseY() * camZoom * 0.05f;
 
-        wasMoved = true;
+        rerender = true;
     }
 
     else if (window.keyIsDown(GLFW_KEY_Q)) {
@@ -237,41 +237,50 @@ void GameLogicInterface::update(float deltaTime) {
         camX += window.getMouseX() * camZoom * 0.05f;
         camY += window.getMouseY() * camZoom * 0.05f;
 
-        wasMoved = true;
+        rerender = true;
     }
 
     if (window.keyIsDown(GLFW_KEY_W)) {
         camY += camZoom * 0.05f;
-        wasMoved = true;
+        rerender = true;
     }
     else if (window.keyIsDown(GLFW_KEY_A)) {
         camX -= camZoom * 0.05f;
-        wasMoved = true;
+        rerender = true;
     }
     if (window.keyIsDown(GLFW_KEY_S)) {
         camY -= camZoom * 0.05f;
-        wasMoved = true;
+        rerender = true;
     }
     else if (window.keyIsDown(GLFW_KEY_D)) {
         camX += camZoom * 0.05f;
-        wasMoved = true;
+        rerender = true;
     }
 
     if (window.keyIsDown(GLFW_KEY_O)) {
         camZoom *= 1.01f;
-        wasMoved = true;
+        rerender = true;
     } else if (window.keyIsDown(GLFW_KEY_P)) {
         camZoom *= 0.99f;
-        wasMoved = true;
+        rerender = true;
     }
 
-    if (wasMoved) {
+    if (rerender) {
         if (renderWithGPU)
             generateMandelbrot_gpu(tex);
         else
             generateMandelbrot_cpu(tex);
     }
 
+    std::string itterTxt = "Process Itterations: ";
+    itterTxt.append(std::to_string(maxItter));
+
+    static BitmapText maxItterCounter;
+    maxItterCounter.setText(itterTxt);
+    maxItterCounter.setPosition(ViewportManager::getLeftViewportBound(), ViewportManager::getTopViewportBound() - 0.08f);
+    maxItterCounter.setCharHeight(0.08f);
+    maxItterCounter.setColor(1, 1, 1);
+    maxItterCounter.render();
 }
 
 void GameLogicInterface::cleanup() {
@@ -293,6 +302,15 @@ void GameLogicInterface::keyCallback(int key, int scancode, int action, int mods
     
     if (key == GLFW_KEY_S && (mods & GLFW_MOD_CONTROL)) {
         tex.saveToFile("mandelbrot-image.png");
+    }
+
+    if (key == GLFW_KEY_9 && action == GLFW_PRESS) {
+        maxItter -= 10;
+        rerender = true;
+    }
+    else if (key == GLFW_KEY_0 && action == GLFW_PRESS) {
+        maxItter += 10;
+        rerender = true;
     }
 
     if (key == GLFW_KEY_1) {

@@ -5,6 +5,9 @@ Controls
 1 - render performed with GPU  
 2 - render performed with CPU  
 
+9 - decrease process itterations  
+0 - increase process itterations  
+
 W - move view up  
 A - move view left  
 S - move view down  

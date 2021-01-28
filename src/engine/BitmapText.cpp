@@ -221,6 +221,6 @@ void BitmapText::render()
 	if (bq.size() > 0) {
 		textShader.setUniform4f("u_textColor", color[0], color[1], color[2], color[3]);
 		textShader.setUniform4f("u_textBGColor", bgColor[0], bgColor[1], bgColor[2], bgColor[3]);
-		bq.renderAll();
+		bq.renderAll(1.0f, position);
 	}
 }
