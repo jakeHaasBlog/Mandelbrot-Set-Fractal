@@ -381,9 +381,11 @@ void GameLogicInterface::keyCallback(int key, int scancode, int action, int mods
 
     if (key == GLFW_KEY_K && action == GLFW_PRESS) {
         colorShiftFactor -= 1;
+        rerender = true;
     }
     else if (key == GLFW_KEY_L && action == GLFW_PRESS) {
         colorShiftFactor += 1;
+        rerender = true;
     }
 
 }
