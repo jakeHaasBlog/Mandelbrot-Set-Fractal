@@ -30,7 +30,7 @@ namespace {
     Texture tex(1080, 720);
 
     double camZoom = 1.0f;
-    double camX = 0.0f;
+    double camX = -0.5f;
     double camY = 0.0f;
 
     int maxItter = 300;
@@ -115,13 +115,13 @@ namespace {
             "   double u_manTransX = packDouble2x32(u_manTransX2i);\n"
             "   double u_manTransY = packDouble2x32(u_manTransY2i);\n"
             ""
-            "   double x0 = v_texCoord[0] * 3.5f - 2.5f;\n"
+            "   double x0 = v_texCoord[0] * 3.5f - 1.75f;\n"
             "   double y0 = v_texCoord[1] * 2.0f - 1.0f;\n"
             ""
             "   x0 *= u_zoom;\n"
             "   y0 *= u_zoom;\n"
             ""
-            "   x0 += u_manTransX;\n"
+            "   x0 += u_manTransX;\n"   
             "   y0 += u_manTransY;\n"
             ""
             "   double x = 0.0f;\n"
@@ -167,10 +167,13 @@ namespace {
 
 
         static TexturedQuad gpuQuad;
-        gpuQuad.setBounding(-2.0f, -1.0f, 4.0f, 2.0f);
         gpuQuad.setShader(sh);
 
         texture.bindAsRenderTarget();
+        gpuQuad.setX(ViewportManager::getLeftViewportBound());
+        gpuQuad.setY(ViewportManager::getBottomViewportBound());
+        gpuQuad.setWidth(ViewportManager::getRightViewportBound() - ViewportManager::getLeftViewportBound());
+        gpuQuad.setHeight(ViewportManager::getTopViewportBound() - ViewportManager::getBottomViewportBound());
         gpuQuad.render();
         texture.unbindAsRenderTarget();
 
@@ -187,7 +190,7 @@ namespace {
                 double y0 = (double)y / texture.getHeight();
 
                 x0 *= 3.5;
-                x0 -= 2.5;
+                x0 -= 1.75;
                 y0 *= 2.0;
                 y0 -= 1.0;
 
@@ -205,8 +208,7 @@ namespace {
             }
         }
 
-
-        texture.generateFromData(1920, 1080, &pixelData[0][0], pixelData.size());
+        texture.generateFromData(texture.getWidth(), texture.getHeight(), &pixelData[0][0], pixelData.size());
     }
 	
 }
@@ -243,23 +245,6 @@ void GameLogicInterface::update(float deltaTime) {
     
     tq.render();
 
-    if (window.keyIsDown(GLFW_KEY_E)) {
-        camZoom += (1.03f * camZoom) * ((double)deltaTime / 16.0);
-
-        camX += window.getMouseX() * camZoom * 0.05f * ((double)deltaTime / 16.0);
-        camY += window.getMouseY() * camZoom * 0.05f * ((double)deltaTime / 16.0);
-
-        rerender = true;
-    }
-
-    else if (window.keyIsDown(GLFW_KEY_Q)) {
-        camZoom -= (1.03 * camZoom) * ((double)deltaTime / 16.0);
-
-        camX += window.getMouseX() * camZoom * 0.05 * ((double)deltaTime / 16.0);
-        camY += window.getMouseY() * camZoom * 0.05 * ((double)deltaTime / 16.0);
-
-        rerender = true;
-    }
 
     if (window.keyIsDown(GLFW_KEY_W)) {
         camY += camZoom * 0.05 * ((double)deltaTime / 16.0);
@@ -359,7 +344,6 @@ void GameLogicInterface::keyCallback(int key, int scancode, int action, int mods
 {
     
     if (key == GLFW_KEY_S && (mods & GLFW_MOD_CONTROL)) {
-        //tex.saveToFile("mandelbrot-image.png");
         saveFlag = true;
     }
 
@@ -385,6 +369,25 @@ void GameLogicInterface::keyCallback(int key, int scancode, int action, int mods
     }
     else if (key == GLFW_KEY_L && action == GLFW_PRESS) {
         colorShiftFactor += 1;
+        rerender = true;
+    }
+
+
+    if (key == GLFW_KEY_E && action == GLFW_PRESS) {
+        camX += (window.getMouseX() * camZoom * 3.5) / 4;
+        camY += (window.getMouseY() * camZoom * 2) / 4;
+
+        camZoom *= 0.4;
+
+        rerender = true;
+    }
+
+    else if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
+        camX += (window.getMouseX() * camZoom * 3.5) / 4;
+        camY += (window.getMouseY() * camZoom * 2) / 4;
+
+        camZoom *= 1.6;
+
         rerender = true;
     }
 
