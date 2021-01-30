@@ -374,8 +374,8 @@ void GameLogicInterface::keyCallback(int key, int scancode, int action, int mods
 
 
     if (key == GLFW_KEY_E && action == GLFW_PRESS) {
-        camX += (window.getMouseX() * camZoom * 3.5) / 4;
-        camY += (window.getMouseY() * camZoom * 2) / 4;
+        camX += window.getMouseX() * camZoom;
+        camY += window.getMouseY() * camZoom;
 
         camZoom *= 0.4;
 
@@ -383,8 +383,8 @@ void GameLogicInterface::keyCallback(int key, int scancode, int action, int mods
     }
 
     else if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
-        camX += (window.getMouseX() * camZoom * 3.5) / 4;
-        camY += (window.getMouseY() * camZoom * 2) / 4;
+        camX -= window.getMouseX() * camZoom;
+        camY -= window.getMouseY() * camZoom;
 
         camZoom *= 1.6;
 
